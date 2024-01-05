@@ -76,6 +76,11 @@ class Cauce
    // sets the projection matrix
    void fijarMatrizProyeccion( const glm::mat4 & new_projection_mat );
 
+   // Problema 1.7 cambiar region visible
+   void fijarRegionVisible( const float x0, const float x1,
+   const float y0, const float y1,
+   const float z0, const float z1 ) ;
+
    // índice del atributo de posiciones (debe ser 0)
    static constexpr GLuint ind_atrib_posiciones = 0 ; 
 

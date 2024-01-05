@@ -8,6 +8,8 @@
 #include <iostream>  // 'cout' and such
 #include <iomanip>   // set precision and such
 #include <vector>    // 'std::vector' types
+#include <stdlib.h>     /* srand, rand */
+#include <math.h>  // atan2
 
 // incluir cabeceras de OpenGL y GLM
 #include "glincludes.h"
@@ -38,6 +40,12 @@ DescrVAO
 Cauce 
     * cauce            = nullptr ; // puntero al objeto de la clase 'Cauce' en uso.
 
+// Si no usamos DescrVao usamos opengl directamente, ejercicios 1.4-1.6
+GLuint vao_noclass = 0;
+std::vector<DescrVBOAtribs *> dvbo_atributo ;
+DescrVBOInds * dvbo_indices   = nullptr ; 
+GLuint buffer = 0;
+DescrVAO * vao_cuad = nullptr, * vao_trian = nullptr;
 
 // ---------------------------------------------------------------------------------------------
 // función que se encarga de visualizar un triángulo relleno en modo diferido,
@@ -173,6 +181,715 @@ void DibujarTriangulo_glm( )
 }
 
 // ---------------------------------------------------------------------------------------------
+// Problema 1.1 a)
+
+void DibujarProblema1_1a(unsigned n) {
+    using namespace std ;
+    using namespace glm ;
+
+    assert( glGetError() == GL_NO_ERROR );
+    assert(n > 2);
+
+    if ( vao_glm == nullptr )
+    {
+        // número de vértices que se van a dibujar
+        unsigned num_verts = n ;
+        float x = 0.0, y = 0.0, angle = 360.0/n;
+
+        // tablas de posiciones y colores de vértices (posiciones en 2D, con Z=0)
+        vector<vec2>   posiciones;
+        for (int i = 0; i < num_verts; ++i) {
+            x = float(cos(radians(angle)*i)); 
+            y = float(sin(radians(angle)*i));
+            posiciones.push_back({x, y});
+        }
+
+        vao_glm = new DescrVAO( cauce->num_atribs, 
+        new DescrVBOAtribs( cauce->ind_atrib_posiciones, posiciones));
+
+        assert( glGetError() == GL_NO_ERROR );
+    }
+    
+    glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+    cauce->fijarColor( { 0.0, 0.0, 0.0 });
+    vao_glm->draw( GL_LINE_LOOP );
+
+    assert( glGetError() == GL_NO_ERROR );
+}
+
+// ---------------------------------------------------------------------------------------------
+// Problema 1.1 b)
+
+void DibujarProblema1_1b(unsigned n) {
+    using namespace std ;
+    using namespace glm ;
+
+    assert( glGetError() == GL_NO_ERROR );
+    assert(n > 2);
+
+    if ( vao_glm == nullptr )
+    {
+        // número de vértices que se van a dibujar
+        unsigned num_verts = 2*n ;
+        float x = 0.0, y = 0.0, prev_x = +1.0, prev_y = +0.0, angle = 360.0/n;
+
+        // tablas de posiciones y colores de vértices (posiciones en 2D, con Z=0)
+        vector<vec2>   posiciones;
+        for (int i = 1; i < num_verts/2+1; ++i) {
+            x = float(cos(radians(angle)*i)); 
+            y = float(sin(radians(angle)*i));
+            posiciones.push_back({prev_x, prev_y});
+            posiciones.push_back({x, y});
+            prev_x = x;
+            prev_y = y;
+        }
+
+        vao_glm = new DescrVAO( cauce->num_atribs, 
+        new DescrVBOAtribs( cauce->ind_atrib_posiciones, posiciones));
+    }
+
+    glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+    cauce->fijarColor( { 0.0, 0.0, 0.0 });
+    vao_glm->draw( GL_LINES );
+
+    assert( glGetError() == GL_NO_ERROR );
+}
+
+// ---------------------------------------------------------------------------------------------
+// Problema 1.2 a)
+
+void DibujarProblema1_2a(unsigned n) {
+    using namespace std ;
+    using namespace glm ;
+
+    assert( glGetError() == GL_NO_ERROR );
+    assert(n > 2);
+
+    if ( vao_glm == nullptr )
+    {
+        // número de vértices que se van a dibujar
+        unsigned num_verts = 3*n ;
+        float x = 0.0, y = 0.0, prev_x = +1.0, prev_y = +0.0, angle = 360.0/n;
+
+        // tablas de posiciones y colores de vértices (posiciones en 2D, con Z=0)
+        vector<vec3>   posiciones;
+        for (int i = 1; i < n+1; ++i) {
+            x = float(cos(radians(angle)*i)); 
+            y = float(sin(radians(angle)*i));
+            posiciones.push_back({+0.0, +0.0, +0.0});
+            posiciones.push_back({prev_x, prev_y, +0.0});
+            posiciones.push_back({x, y, +0.0});
+            prev_x = x;
+            prev_y = y;
+        }
+
+        vao_glm = new DescrVAO( cauce->num_atribs, 
+        new DescrVBOAtribs( cauce->ind_atrib_posiciones, posiciones));
+    }
+
+    glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+    cauce->fijarColor( { 0.0, 0.0, 0.0 });
+    vao_glm->draw( GL_TRIANGLES );
+
+    assert( glGetError() == GL_NO_ERROR );
+}
+
+// ---------------------------------------------------------------------------------------------
+// Problema 1.2 b)
+
+void DibujarProblema1_2b(unsigned n) {
+    using namespace std ;
+    using namespace glm ;
+
+    assert( glGetError() == GL_NO_ERROR );
+    assert(n > 2);
+
+    if ( vao_glm == nullptr )
+    {
+        // número de vértices que se van a dibujar
+        float x = 0.0, y = 0.0, prev_x = +1.0, prev_y = +0.0, angle = 360.0/n;
+
+        // tablas de posiciones y colores de vértices (posiciones en 2D, con Z=0)
+        vector<vec3> posiciones = {{+0.0, +0.0, +0.0}};
+        vector<uvec3> indices;
+
+        for (int i = 0; i < n; ++i) {
+            x = float(cos(radians(angle)*i)); 
+            y = float(sin(radians(angle)*i));
+            posiciones.push_back({x, y, +0.0});
+        }
+
+        for (int i = 1; i < n; ++i) {
+            indices.push_back({0, i, i+1});
+        }
+        indices.push_back({0, n, 1});
+
+        vao_glm = new DescrVAO( cauce->num_atribs, 
+        new DescrVBOAtribs( cauce->ind_atrib_posiciones, posiciones));
+        vao_glm->agregar( new DescrVBOInds( indices ) );
+
+    }
+    glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+    cauce->fijarColor( { 0.0, 0.0, 0.0 });
+    vao_glm->draw( GL_TRIANGLES );
+
+    assert( glGetError() == GL_NO_ERROR );
+}
+
+// ---------------------------------------------------------------------------------------------
+// Problema 1.3
+
+void DibujarProblema1_3(unsigned n) {
+    using namespace std ;
+    using namespace glm ;
+
+    assert( glGetError() == GL_NO_ERROR );
+    assert(n > 2);
+
+    // copia de 1.1 a)
+    if ( vao_no_ind == nullptr )
+    {
+        // número de vértices que se van a dibujar
+        unsigned num_verts = n ;
+        float x = 0.0, y = 0.0, angle = 360.0/n;
+
+        // tablas de posiciones y colores de vértices (posiciones en 2D, con Z=0)
+        vector<vec2>   posiciones;
+        for (int i = 0; i < num_verts; ++i) {
+            x = float(cos(radians(angle)*i)); 
+            y = float(sin(radians(angle)*i));
+            posiciones.push_back({x, y});
+        }
+
+        vao_no_ind = new DescrVAO( cauce->num_atribs, 
+        new DescrVBOAtribs( cauce->ind_atrib_posiciones, posiciones));
+
+        assert( glGetError() == GL_NO_ERROR );
+    }
+
+    assert( glGetError() == GL_NO_ERROR );
+
+    // copia de 1.2 b)
+    if ( vao_ind == nullptr )
+    {
+        // número de vértices que se van a dibujar
+        float x = 0.0, y = 0.0, prev_x = +1.0, prev_y = +0.0, angle = 360.0/n;
+
+        // tablas de posiciones y colores de vértices (posiciones en 2D, con Z=0)
+        vector<vec3> posiciones = {{+0.0, +0.0, +0.0}};
+        vector<uvec3> indices;
+
+        for (int i = 0; i < n; ++i) {
+            x = float(cos(radians(angle)*i)); 
+            y = float(sin(radians(angle)*i));
+            posiciones.push_back({x, y, +0.0});
+        }
+
+        for (int i = 1; i < n; ++i) {
+            indices.push_back({0, i, i+1});
+        }
+        indices.push_back({0, n, 1});
+
+        vao_ind = new DescrVAO( cauce->num_atribs, 
+        new DescrVBOAtribs( cauce->ind_atrib_posiciones, posiciones));
+        vao_ind->agregar( new DescrVBOInds( indices ) );
+    }
+
+    assert( glGetError() == GL_NO_ERROR ); 
+
+    glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+    cauce->fijarUsarColorPlano( true );
+    cauce->fijarColor( { +1.0, +0.0, +0.0 });
+    vao_ind->draw( GL_TRIANGLES );
+
+    assert( glGetError() == GL_NO_ERROR ); 
+
+    glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+    cauce->fijarColor( { 0.0, 0.0, 0.0 });
+    vao_no_ind->draw( GL_LINE_LOOP );
+
+    assert( glGetError() == GL_NO_ERROR );    
+}
+
+// ---------------------------------------------------------------------------------------------
+// Problema 1.4
+
+void DibujarProblema1_4(unsigned n) {
+    using namespace std ;
+    using namespace glm ;
+
+    assert( glGetError() == GL_NO_ERROR );
+    assert(n > 2);
+
+    // copia de 1.2 b)
+    if ( vao_noclass == 0 )
+    {
+        // número de vértices que se van a dibujar
+        float x = 0.0, y = 0.0, prev_x = +1.0, prev_y = +0.0, angle = 360.0/n;
+
+        // tablas de posiciones y colores de vértices (posiciones en 2D, con Z=0)
+        vector<vec3> posiciones = {{+0.0, +0.0, +0.0}};
+        vector<uvec3> indices;
+
+        for (int i = 0; i < n; ++i) {
+            x = float(cos(radians(angle)*i)); 
+            y = float(sin(radians(angle)*i));
+            posiciones.push_back({x, y, +0.0});
+        }
+
+        for (int i = 1; i < n; ++i) {
+            indices.push_back({0, i, i+1});
+        }
+        indices.push_back({0, n, 1});
+        
+        // creamos vao
+        glGenVertexArrays( 1, &vao_noclass ); 
+        assert( vao_noclass > 0 );
+        glBindVertexArray( vao_noclass );
+
+        // creamos vbo
+        DescrVBOAtribs * vbo_pos = new DescrVBOAtribs( cauce->ind_atrib_posiciones, posiciones);
+        dvbo_indices = new DescrVBOInds( indices );
+        dvbo_atributo.push_back(vbo_pos);
+        // Lo que ancla un vbo a un vao dentro de crearVBO es glVertexAttribPointer
+        // En caso de vbo de indices hacer bind lo ancla al vao activo actual
+        vbo_pos->crearVBO();
+        dvbo_indices->crearVBO();
+    } else {
+        glBindVertexArray( vao_noclass );
+    }
+
+    assert( glGetError() == GL_NO_ERROR ); 
+
+    glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+    cauce->fijarUsarColorPlano( true );
+    cauce->fijarColor( { +1.0, +0.0, +0.0 });
+    glDrawElements(GL_TRIANGLES, dvbo_indices->leerCount(), dvbo_indices->leerType(), 0);
+
+    assert( glGetError() == GL_NO_ERROR ); 
+
+    glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+    cauce->fijarColor( { 0.0, 0.0, 0.0 });
+    // Tenemos n+1 vertices, pero solo queremos n de ellos, sin el vertice 0
+    glDrawArrays( GL_LINE_LOOP, 1, n);
+
+    assert( glGetError() == GL_NO_ERROR ); 
+    
+    // Desactivamos vao 
+    glBindVertexArray( 0 );  
+}
+
+// ---------------------------------------------------------------------------------------------
+// Problema 1.5
+
+void DibujarProblema1_5(unsigned n) {
+    using namespace std ;
+    using namespace glm ;
+
+    assert( glGetError() == GL_NO_ERROR );
+    assert(n > 2);
+
+    // copia de 1.2 b)
+    if ( vao_noclass == 0 )
+    {
+        // número de vértices que se van a dibujar
+        float x = 0.0, y = 0.0, prev_x = +1.0, prev_y = +0.0, angle = 360.0/n;
+        float r = 0.0, g = 0.0, b = 0.0;
+        // randomizamos
+        srand (time(NULL));
+
+        // tablas de posiciones y colores de vértices (posiciones en 2D, con Z=0)
+        vector<vec3> posiciones = {{+0.0, +0.0, +0.0}};
+        vector<vec3> colores;
+        vector<uvec3> indices;
+
+        // Generamos vertices
+        for (int i = 0; i < n; ++i) {
+            x = float(cos(radians(angle)*i)); 
+            y = float(sin(radians(angle)*i));
+            posiciones.push_back({x, y, +0.0});
+        }
+        // Generamos colores
+        for (int i = 0; i < n+1; ++i) {
+            r = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+            g = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+            b = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+            colores.push_back({r, g, b});
+        }
+
+        // Generamos indices
+        for (int i = 1; i < n; ++i) {
+            indices.push_back({0, i, i+1});
+        }
+        indices.push_back({0, n, 1});
+        
+        // creamos vao
+        glGenVertexArrays( 1, &vao_noclass ); 
+        assert( vao_noclass > 0 );
+        glBindVertexArray( vao_noclass );
+
+        // creamos vbo
+        DescrVBOAtribs * vbo_pos = new DescrVBOAtribs( cauce->ind_atrib_posiciones, posiciones);
+        DescrVBOAtribs * vbo_col = new DescrVBOAtribs( cauce->ind_atrib_colores, colores);
+        dvbo_indices = new DescrVBOInds( indices );
+        dvbo_atributo.push_back(vbo_pos);
+        dvbo_atributo.push_back(vbo_col);
+        // Lo que ancla un vbo a un vao dentro de crearVBO es glVertexAttribPointer
+        // En caso de vbo de indices hacer bind lo ancla al vao activo actual
+        for (int i = 0; i < dvbo_atributo.size(); ++i) {
+            dvbo_atributo[i]->crearVBO();
+        }
+        dvbo_indices->crearVBO();
+    } else {
+        glBindVertexArray( vao_noclass );
+    }
+
+    assert( glGetError() == GL_NO_ERROR ); 
+
+    glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+    cauce->fijarUsarColorPlano( false );
+    glDrawElements(GL_TRIANGLES, dvbo_indices->leerCount(), dvbo_indices->leerType(), 0);
+
+    assert( glGetError() == GL_NO_ERROR ); 
+
+    glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+    cauce->fijarUsarColorPlano( true );
+    cauce->fijarColor( { 0.0, 0.0, 0.0 });
+    // Deshabilitamos tabla de colores
+    glDisableVertexAttribArray( cauce->ind_atrib_colores );
+    // Tenemos n+1 vertices, pero solo queremos n de ellos, sin el vertice 0
+    glDrawArrays( GL_LINE_LOOP, 1, n);
+
+    assert( glGetError() == GL_NO_ERROR ); 
+    
+    // Desactivamos vao 
+    glBindVertexArray( 0 ); 
+}
+
+// ---------------------------------------------------------------------------------------------
+// Problema 1.6
+
+void DibujarProblema1_6(unsigned n) {
+    using namespace std ;
+    using namespace glm ;
+
+    assert( glGetError() == GL_NO_ERROR );
+    assert(n > 2);
+
+    // copia de 1.2 b)
+    if ( vao_noclass == 0 )
+    {
+        // número de vértices que se van a dibujar
+        float x = 0.0, y = 0.0, prev_x = +1.0, prev_y = +0.0, angle = 360.0/n;
+        float r = 0.0, g = 0.0, b = 0.0;
+        // randomizamos
+        srand (time(NULL));
+
+        // tablas de posiciones y colores de vértices (posiciones en 2D, con Z=0)
+        r = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+        g = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+        b = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+        vector<vec3> aos = {{+0.0, +0.0, +0.0}, {r, g, b}};
+        vector<uvec3> indices;
+
+        // Generamos vertices y colores
+        for (int i = 0; i < n; ++i) {
+            x = float(cos(radians(angle)*i)); 
+            y = float(sin(radians(angle)*i));
+            r = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+            g = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+            b = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+            aos.push_back({x, y, +0.0});
+            aos.push_back({r, g, b});
+        }
+
+        // Generamos indices
+        for (int i = 1; i < n; ++i) {
+            indices.push_back({0, i, i+1});
+        }
+        indices.push_back({0, n, 1});
+        
+        // creamos vao
+        glGenVertexArrays( 1, &vao_noclass ); 
+        assert( vao_noclass > 0 );
+        glBindVertexArray( vao_noclass );
+
+        GLint size = 3;
+        GLsizei count = 2*(n+1);
+        GLsizeiptr tot_size = size*count*sizeof( float );
+        // stride es el paso que incluye tanto pos como col, es decir 6 floats
+        GLsizei stride = 2*size*sizeof(float);
+        // el offset para los colores es 3 floats de las posiciones del primer vertice
+        void * offset = (void*)(3*sizeof(float));
+
+        // creamos vbo
+        // generar un nuevo identificador de VBO 
+        glGenBuffers( 1, &buffer ); assert( 0 < buffer );
+
+        // fija este buffer como buffer 'activo' actualmente en el 'target' GL_ARRAY_BUFFER
+        glBindBuffer( GL_ARRAY_BUFFER, buffer ); 
+
+        // transfiere los datos desde la memoria de la aplicación al VBO en GPU
+        glBufferData( GL_ARRAY_BUFFER, tot_size, aos.data(), GL_STATIC_DRAW );  
+            
+        // indicar, para este índice de atributo, la localización y el formato de la tabla en el buffer 
+        glVertexAttribPointer( cauce->ind_atrib_posiciones, size, GL_FLOAT, 
+        GL_FALSE, stride, 0  );
+        glVertexAttribPointer( cauce->ind_atrib_colores, size, GL_FLOAT, 
+        GL_FALSE, stride, offset);
+
+        // desactivar el buffer
+        glBindBuffer( GL_ARRAY_BUFFER, 0 );
+
+        // por defecto, habilita el uso de esta tabla de atributos
+        glEnableVertexAttribArray( cauce->ind_atrib_posiciones );
+        glEnableVertexAttribArray( cauce->ind_atrib_colores );
+
+        // comprobar que no ha habido error durante la creación del VBO
+        CError();
+        dvbo_indices = new DescrVBOInds( indices );
+        dvbo_indices->crearVBO();
+    } else {
+        glBindVertexArray( vao_noclass );
+    }
+
+    assert( glGetError() == GL_NO_ERROR ); 
+
+    glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+    cauce->fijarUsarColorPlano( false );
+    glDrawElements(GL_TRIANGLES, dvbo_indices->leerCount(), dvbo_indices->leerType(), 0);
+
+    assert( glGetError() == GL_NO_ERROR ); 
+
+    glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+    cauce->fijarUsarColorPlano( true );
+    cauce->fijarColor( { 0.0, 0.0, 0.0 });
+    // Deshabilitamos tabla de colores
+    glDisableVertexAttribArray( cauce->ind_atrib_colores );
+    // Tenemos n+1 vertices, pero solo queremos n de ellos, sin el vertice 0
+    glDrawArrays( GL_LINE_LOOP, 1, n);
+
+    assert( glGetError() == GL_NO_ERROR ); 
+    
+    // Desactivamos vao 
+    glBindVertexArray( 0 ); 
+}
+
+// ---------------------------------------------------------------------------------------------
+// Problema 2.15
+
+void gancho() {
+    using namespace std ;
+    using namespace glm ;
+    assert( glGetError() == GL_NO_ERROR );
+
+    // la primera vez, crear e inicializar el VAO
+    if ( vao_glm == nullptr )
+    {
+        const vector<vec2>   posiciones = { {+0.0, +0.0}, {+0.25, +0.0}, {+0.25, +0.25},
+        {+0.0, +0.25}, {+0.0, +0.5}
+        };     
+        vao_glm = new DescrVAO( cauce->num_atribs, 
+        new DescrVBOAtribs( cauce->ind_atrib_posiciones, posiciones )); 
+    }
+
+    assert( glGetError() == GL_NO_ERROR );
+
+    // dibujar las líneas usando color negro
+    glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+    vao_glm->draw( GL_LINE_STRIP );
+
+    assert( glGetError() == GL_NO_ERROR );  
+}
+
+// ---------------------------------------------------------------------------------------------
+// Problema 2.16
+
+void gancho_x4() {
+    using namespace std ;
+    using namespace glm ;
+    assert( glGetError() == GL_NO_ERROR );
+
+    // dibujar las líneas usando color negro
+    for (int i = 0; i < 4; ++i) {
+        gancho();
+        cauce->compMM(translate(vec3{+0.0, +0.5, +0.0}));
+        cauce->compMM(rotate(radians(90.0f), vec3{+0.0, +0.0, +1.0}));
+    }
+
+    assert( glGetError() == GL_NO_ERROR );  
+}
+
+// ---------------------------------------------------------------------------------------------
+// Problema 2.17 a)
+
+void gancho_2p(glm::vec3 p0, glm::vec3 p1) {
+    using namespace std;
+    using namespace glm;
+    assert( glGetError() == GL_NO_ERROR );
+    float l = length(p0-p1);
+    float angle = atan2(p1.y-p0.y,p1.x-p0.x) - radians(90.0);
+
+    cauce->resetMM();
+    cauce->compMM(translate(vec3{p0.x, p0.y, 0}));
+    cauce->compMM(rotate(angle, vec3{+0.0, +0.0, +1.0}));
+    cauce->compMM(scale(vec3{l/0.5, l/0.5, 1}));
+    gancho();
+
+    assert( glGetError() == GL_NO_ERROR );  
+}
+
+// ---------------------------------------------------------------------------------------------
+// Problema 2.18
+
+void gancho_2pcirculo(unsigned n) {
+    using namespace std;
+    using namespace glm;
+    assert(n>2);
+    assert( glGetError() == GL_NO_ERROR );
+    float angle = 360.0/n;
+    vec3 p = {+0.5, +0.0, +0.0}, prev = p;
+    mat3 rot = rotate(radians(angle), vec3{+0.0, +0.0, +1.0});
+
+    for (int i = 0; i < n; ++i) {
+        p = rot*p;
+        gancho_2p(prev, p);
+        prev = p;
+    }
+
+    assert( glGetError() == GL_NO_ERROR );  
+}
+
+// ---------------------------------------------------------------------------------------------
+// Problema 2.20
+
+void FiguraSimple() {
+    using namespace std;
+    using namespace glm;
+    assert( glGetError() == GL_NO_ERROR );
+    if (!vao_cuad) {
+        vector<vec3> posiciones = {{+0.0, +0.0, +1.0}, {+0.5, +0.0, +1.0}, {+0.5, +0.5, +1.0}, 
+        {+0.0, +0.0, +1.0}, {+0.0, +0.5, +1.0}, {+0.5, +0.5, +1.0}};
+        vao_cuad = new DescrVAO(cauce->num_atribs, 
+        new DescrVBOAtribs( cauce->ind_atrib_posiciones, posiciones ));
+    }
+    assert( glGetError() == GL_NO_ERROR );
+    if (!vao_trian) {
+        vector<vec3> posiciones = {{+0.1, +0.1, -1.0}, {+0.3, +0.1, -1.0}, {+0.2, +0.3, -1.0}};
+        vao_trian = new DescrVAO(cauce->num_atribs, 
+        new DescrVBOAtribs( cauce->ind_atrib_posiciones, posiciones ));
+    }
+    
+    assert( glGetError() == GL_NO_ERROR );
+    
+    glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+    cauce->fijarUsarColorPlano( true );
+    cauce->pushColor();
+    cauce->fijarColor( { 0.0, 0.0, 1.0 });
+    vao_cuad->draw( GL_TRIANGLES );
+
+    cauce->popColor();
+    assert( glGetError() == GL_NO_ERROR );
+    glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+    vao_trian->draw( GL_TRIANGLES );
+
+    assert( glGetError() == GL_NO_ERROR );
+}
+
+// ---------------------------------------------------------------------------------------------
+// Problema 2.21
+
+void FiguraCompleja() {
+    using namespace std;
+    using namespace glm;
+    cauce->compMM(scale(vec3(+0.25, +0.25, +1.0)));
+    cauce->pushMM();
+        cauce->compMM(translate(vec3{+1.0, +1.0, +0.0}));
+        cauce->compMM(rotate(radians(-45.0f), vec3{+0.0, +0.0, +1.0}));
+        cauce->compMM(scale(vec3{sqrt(2), -sqrt(2), +1.0}));
+        FiguraSimple();
+    cauce->popMM();
+    cauce->pushMM();
+        cauce->compMM(translate(vec3{+1.5, +0.5, +0.0}));
+        cauce->compMM(scale(vec3{+2.0, -1.0, +1.0}));
+        FiguraSimple();
+    cauce->popMM();
+    FiguraSimple();
+}
+
+// ---------------------------------------------------------------------------------------------
+// Problema 2.22
+
+void Tronco() {
+    using namespace std;
+    using namespace glm;
+    assert( glGetError() == GL_NO_ERROR );
+    cauce->pushMM();
+    cauce->compMM(scale(vec3{+0.1, +0.1, +1.0}));
+    if (!vao_ind) {
+        vector<vec2> posiciones = {
+            {+0.0, +0.0}, {+1.0, +0.0}, {+1.0, +1.0},
+            {+2.0, +2.0}, {+1.5, +2.5}, {+0.5, +1.5},
+            {+0.0, +3.0}, {-0.5, +3.0}, {+0.0, +1.5}
+        };
+        vector<uvec3> indices = {
+            {8, 5, 7}, {5, 6, 7}, {8, 2, 5},
+            {5, 2, 4}, {2, 3, 4}, {0, 1, 8},
+            {1, 2, 8}
+        };
+        vao_ind = new DescrVAO(cauce->num_atribs, 
+        new DescrVBOAtribs(cauce->ind_atrib_posiciones, posiciones));
+        vao_ind->agregar(new DescrVBOInds(indices));
+    }
+    if (!vao_no_ind) {
+        vector<vec2> posiciones = {
+            {+0.0, +0.0}, {+0.0, +1.5}, {+0.0, +1.5}, 
+            {-0.5, +3.0}, {+0.0, +3.0}, {+0.5, +1.5}, 
+            {+0.5, +1.5}, {+1.5, +2.5}, {+2.0, +2.0}, 
+            {+1.0, +1.0}, {+1.0, +1.0}, {+1.0, +0.0}
+        };
+        vao_no_ind = new DescrVAO(cauce->num_atribs, 
+        new DescrVBOAtribs(cauce->ind_atrib_posiciones, posiciones));
+    }
+    glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+    cauce->fijarUsarColorPlano( true );
+    cauce->fijarColor( { 0.5, 0.5, 1.0 });
+    vao_ind->draw( GL_TRIANGLES );
+
+    glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+    cauce->fijarUsarColorPlano( true );
+    cauce->fijarColor( { 0.0, 0.0, 1.0 });
+    vao_no_ind->draw( GL_LINES );
+
+    cauce->popMM();
+}
+
+// ---------------------------------------------------------------------------------------------
+// Problema 2.23
+void Arbol(unsigned n) {
+    using namespace std;
+    using namespace glm;
+    // Caso base
+    if (n == 0) {
+        return;
+    }
+    Tronco();
+    // Llamada recursiva izda
+    cauce->pushMM();
+        cauce->compMM(translate(vec3{-0.5*0.1, +3.0*0.1, +0.0}));
+        cauce->compMM(scale(vec3{+0.5, +0.5, +1.0}));
+        Arbol(n-1);
+    cauce->popMM();
+    // Llamada recursiva derecha
+    cauce->pushMM();
+        cauce->compMM(translate(vec3{+1.5*0.1, +2.5*0.1, +0.0}));
+        cauce->compMM(rotate(radians(-45.0f), vec3{+0.0, +0.0, +1.0}));
+        cauce->compMM(scale(vec3{sqrt(0.5), sqrt(0.5), +1.0}));
+        Arbol(n-1);
+    cauce->popMM();
+}
+
+// ---------------------------------------------------------------------------------------------
 // función que se encarga de visualizar el contenido en la ventana
 
 void VisualizarFrame( )
@@ -204,21 +921,59 @@ void VisualizarFrame( )
     // habilitar EPO por Z-buffer (test de profundidad)
     glDisable( GL_DEPTH_TEST );
 
+    // evitamos deformacion problema 1.8
+    //cauce->fijarRegionVisible(-float(ancho_actual)/512, -float(alto_actual)/512, -1.0, 
+    //float(ancho_actual)/512, float(alto_actual)/512, +1.0);
+
     // Dibujar un triángulo, es una secuncia de vértice no indexada.
-    DibujarTriangulo_NoInd();
+    //DibujarTriangulo_NoInd();
+    
 
     // usa el color plano para el segundo triángulo
-    cauce->fijarUsarColorPlano( true );
+    //cauce->fijarUsarColorPlano( true );
 
     // dibujar triángulo indexado (rotado y luego desplazado) 
+    /*
     cauce->pushMM();
         cauce->compMM( translate( vec3{ 0.4f, 0.1f, -0.1f}  ));
         cauce->compMM( rotate(  radians(23.0f), vec3{ 0.0f, 0.0f, 1.0f}   ));
         DibujarTriangulo_Ind();     // indexado
-    cauce->popMM();
 
+    cauce->popMM();
+    */
     // dibujar un triángulo usando vectores de GLM
-    DibujarTriangulo_glm() ;
+    //DibujarTriangulo_glm() ;
+
+    //DibujarProblema1_6(5);
+    //gancho_2p(vec3{+0.0, +0.0, +0.0}, vec3{+0.3, -0.3, +0.0});
+    //gancho_2pcirculo(12);
+    //FiguraCompleja();
+    Arbol(5);
+    // Limpiamos memoria
+   for( unsigned i = 1 ; i < dvbo_atributo.size() ; i++ )
+   {  
+      delete dvbo_atributo[i] ;
+      dvbo_atributo[i] = nullptr ; 
+   }
+   if (dvbo_indices != nullptr ) {
+    delete dvbo_indices ;
+    dvbo_indices = nullptr ; 
+   }
+   
+    if (buffer != 0) {
+        CError();
+      glDeleteBuffers( 1, &buffer );
+      CError();
+      buffer = 0 ; // probablemente innecesario
+    }
+
+   if ( vao_noclass != 0 )
+   {
+      CError();
+      glDeleteVertexArrays( 1, &vao_noclass );
+      CError();
+      vao_noclass = 0 ; // probablemente innecesario
+   }
 
     // comprobar y limpiar variable interna de error
     assert( glGetError() == GL_NO_ERROR );
@@ -237,8 +992,10 @@ void FGE_CambioTamano( GLFWwindow* ventana, int nuevo_ancho, int nuevo_alto )
 {
     using namespace std ;
     //cout << "FGE cambio tamaño, nuevas dimensiones: " << nuevo_ancho << " x " << nuevo_alto << "." << endl ;
+
     ancho_actual      = nuevo_ancho ;
     alto_actual       = nuevo_alto ;
+
     redibujar_ventana = true ; // fuerza a redibujar la ventana
 }
 // ---------------------------------------------------------------------------------------------
